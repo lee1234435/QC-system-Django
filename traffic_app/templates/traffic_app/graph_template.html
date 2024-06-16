@@ -1,0 +1,137 @@
+<!-- graph_template.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database and Chart Display</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        #data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        #data-table th, #data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        #data-table th {
+            background-color: #f2f2f2;
+        }
+        #chart-container {
+            width: 80%;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Database and Chart Display</h1>
+
+    <div>
+        <h2>Database Content</h2>
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Serial Number</th>
+                    <th>Size</th>
+                    <th>Line</th>
+                    <th>Judgement</th>
+                    <th>Image</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be populated here using JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="chart-container">
+        <h2>Judgement Chart</h2>
+        <canvas id="judgement-chart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const updateInterval = 10000; // 10초마다 업데이트
+
+            function fetchDataAndUpdate() {
+                fetch('/api/get_data/')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateTable(data);
+                        updateChart(data);
+                    })
+                    .catch(error => console.error('Error fetching data:', error));
+            }
+
+            function updateTable(data) {
+                const tableBody = document.querySelector("#data-table tbody");
+                tableBody.innerHTML = ''; // 기존 데이터를 지웁니다
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.id}</td>
+                        <td>${item.name}</td>
+                        <td>${item.date}</td>
+                        <td>${item.serial_number}</td>
+                        <td>${item.size}</td>
+                        <td>${item.line}</td>
+                        <td>${item.judgement}</td>
+                        <td><img src="${item.image}" alt="${item.name}" width="50"></td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            function updateChart(data) {
+                const passCount = data.filter(item => item.judgement === 'Pass').length;
+                const grapCount = data.filter(item => item.judgement === 'Grap').length;
+
+                const ctx = document.getElementById('judgement-chart').getContext('2d');
+                if (window.judgementChart) {
+                    window.judgementChart.data.datasets[0].data = [passCount, grapCount];
+                    window.judgementChart.update();
+                } else {
+                    window.judgementChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Pass', 'Grap'],
+                            datasets: [{
+                                label: 'Judgements',
+                                data: [passCount, grapCount],
+                                backgroundColor: ['blue', 'red']
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // 초기 데이터 로드
+            fetchDataAndUpdate();
+
+            // 일정 간격으로 데이터 업데이트
+            setInterval(fetchDataAndUpdate, updateInterval);
+        });
+    </script>
+</body>
+</html>

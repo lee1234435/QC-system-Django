@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Database Display</title>
+</head>
+<body>
+    <h1>Database Data</h1>
+    <ul>
+        {% for item in data_from_database %}
+        <li>{{ item.name }} - {{ item.date }} - {{ item.serial_number }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
